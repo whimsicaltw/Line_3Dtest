@@ -1,10 +1,12 @@
 import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/build/three.module.js';
 import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/examples/jsm/controls/OrbitControls.js';
 import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/examples/jsm/loaders/GLTFLoader.js';
+import {GUI} from 'https://threejsfundamentals.org/threejs/../3rdparty/dat.gui.module.js';
 
 function main() {
   const canvas = document.querySelector('#c');
   const renderer = new THREE.WebGLRenderer({canvas});
+  renderer.shadowMap.enabled = true;
 
   const fov = 45;
   const aspect = 2;  // the canvas default
@@ -18,7 +20,7 @@ function main() {
   controls.update();
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('black');
+  scene.background = new THREE.Color('#DEFEFF');
 
   {
     const planeSize = 40;
@@ -53,9 +55,124 @@ function main() {
     const color = 0xFFFFFF;
     const intensity = 1;
     const light = new THREE.DirectionalLight(color, intensity);
-    light.position.set(5, 10, 2);
+    light.castShadow = true;
+    light.position.set(-250, 800, -850);
+    light.target.position.set(-550, 40, -450);
+
+    light.shadow.bias = -0.004;
+    light.shadow.mapSize.width = 2048;
+    light.shadow.mapSize.height = 2048;
+
     scene.add(light);
     scene.add(light.target);
+    const cam = light.shadow.camera;
+    cam.near = 1;
+    cam.far = 2000;
+    cam.left = -1500;
+    cam.right = 1500;
+    cam.top = 1500;
+    cam.bottom = -1500;
+
+    const cameraHelper = new THREE.CameraHelper(cam);
+    scene.add(cameraHelper);
+    cameraHelper.visible = false;
+    const helper = new THREE.DirectionalLightHelper(light, 100);
+    scene.add(helper);
+    helper.visible = false;
+
+    function makeXYZGUI(gui, vector3, name, onChangeFn) {
+      const folder = gui.addFolder(name);
+      folder.add(vector3, 'x', vector3.x - 500, vector3.x + 500).onChange(onChangeFn);
+      folder.add(vector3, 'y', vector3.y - 500, vector3.y + 500).onChange(onChangeFn);
+      folder.add(vector3, 'z', vector3.z - 500, vector3.z + 500).onChange(onChangeFn);
+      folder.open();
+    }
+
+    function updateCamera() {
+      // update the light target's matrixWorld because it's needed by the helper
+      light.updateMatrixWorld();
+      light.target.updateMatrixWorld();
+      helper.update();
+      // update the light's shadow camera's projection matrix
+      light.shadow.camera.updateProjectionMatrix();
+      // and now update the camera helper we're using to show the light's shadow camera
+      cameraHelper.update();
+    }
+    updateCamera();
+
+    class DimensionGUIHelper {
+      constructor(obj, minProp, maxProp) {
+        this.obj = obj;
+        this.minProp = minProp;
+        this.maxProp = maxProp;
+      }
+      get value() {
+        return this.obj[this.maxProp] * 2;
+      }
+      set value(v) {
+        this.obj[this.maxProp] = v /  2;
+        this.obj[this.minProp] = v / -2;
+      }
+    }
+
+    class MinMaxGUIHelper {
+      constructor(obj, minProp, maxProp, minDif) {
+        this.obj = obj;
+        this.minProp = minProp;
+        this.maxProp = maxProp;
+        this.minDif = minDif;
+      }
+      get min() {
+        return this.obj[this.minProp];
+      }
+      set min(v) {
+        this.obj[this.minProp] = v;
+        this.obj[this.maxProp] = Math.max(this.obj[this.maxProp], v + this.minDif);
+      }
+      get max() {
+        return this.obj[this.maxProp];
+      }
+      set max(v) {
+        this.obj[this.maxProp] = v;
+        this.min = this.min;  // this will call the min setter
+      }
+    }
+
+    class VisibleGUIHelper {
+      constructor(...objects) {
+        this.objects = [...objects];
+      }
+      get value() {
+        return this.objects[0].visible;
+      }
+      set value(v) {
+        this.objects.forEach((obj) => {
+          obj.visible = v;
+        });
+      }
+    }
+
+    const gui = new GUI();
+    gui.close();
+    gui.add(new VisibleGUIHelper(helper, cameraHelper), 'value').name('show helpers');
+    gui.add(light.shadow, 'bias', -0.1, 0.1, 0.001);
+    {
+      const folder = gui.addFolder('Shadow Camera');
+      folder.open();
+      folder.add(new DimensionGUIHelper(light.shadow.camera, 'left', 'right'), 'value', 1, 4000)
+        .name('width')
+        .onChange(updateCamera);
+      folder.add(new DimensionGUIHelper(light.shadow.camera, 'bottom', 'top'), 'value', 1, 4000 )
+        .name('height')
+        .onChange(updateCamera);
+      const minMaxGUIHelper = new MinMaxGUIHelper(light.shadow.camera, 'near', 'far', 0.1);
+      folder.add(minMaxGUIHelper, 'min', 1, 1000, 1).name('near').onChange(updateCamera);
+      folder.add(minMaxGUIHelper, 'max', 1, 4000, 1).name('far').onChange(updateCamera);
+      folder.add(light.shadow.camera, 'zoom', 0.01, 1.5, 0.01).onChange(updateCamera);
+    }
+
+    makeXYZGUI(gui, light.position, 'position', updateCamera);
+    makeXYZGUI(gui, light.target.position, 'target', updateCamera);
   }
 
   function frameArea(sizeToFitOnScreen, boxSize, boxCenter, camera) {
@@ -84,11 +201,19 @@ function main() {
     camera.lookAt(boxCenter.x, boxCenter.y, boxCenter.z);
   }
 
+
   {
     const gltfLoader = new GLTFLoader();
-    gltfLoader.load('https://raw.githubusercontent.com/whimsicaltw/Line_3Dtest/master/model/test1.gltf', (gltf) => {
+    gltfLoader.load('https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene.gltf', (gltf) => {
       const root = gltf.scene;
       scene.add(root);
+
+      root.traverse((obj) => {
+        if (obj.castShadow !== undefined) {
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+        }
+      });
 
       // compute the box that contains all the stuff
       // from root and below
@@ -119,6 +244,7 @@ function main() {
   }
 
   function render() {
+
     if (resizeRendererToDisplaySize(renderer)) {
       const canvas = renderer.domElement;
       camera.aspect = canvas.clientWidth / canvas.clientHeight;
