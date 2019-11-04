@@ -12,8 +12,8 @@ function main() {
   const aspect = 2;  // the canvas default
   const near = 0.1;
   const far = 100;
-  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera.position.set(0, 10, 20);
+  const camera = new THREE.OrthographicCamera(fov, aspect, near, far);
+  camera.position.set(0, 20, 20);
 
   const controls = new OrbitControls(camera, canvas);
   controls.target.set(0, 5, 0);
@@ -56,8 +56,8 @@ function main() {
     const intensity = 3;
     const light = new THREE.DirectionalLight(color, intensity);
     light.castShadow = true;
-    light.position.set(-250, 800, -850);
-    light.target.position.set(-550, 40, -450);
+    light.position.set(-400, 300, 250);
+    light.target.position.set(0, -200, 0);
 
     light.shadow.bias = -0.004;
     light.shadow.mapSize.width = 2048;
