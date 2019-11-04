@@ -12,7 +12,7 @@ function main() {
   const aspect = 2;  // the canvas default
   const near = 0.1;
   const far = 100;
-  const camera = new THREE.OrthographicCamera(fov, aspect, near, far);
+  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.set(0, 20, 20);
 
   const controls = new OrbitControls(camera, canvas);
@@ -46,7 +46,7 @@ function main() {
   {
     const skyColor = 0xB1E1FF;  // light blue
     const groundColor = 0xB97A20;  // brownish orange
-    const intensity = 1;
+    const intensity = 3;
     const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
     scene.add(light);
   }
