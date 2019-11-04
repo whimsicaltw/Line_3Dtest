@@ -1,6 +1,6 @@
 // Three.js - Load .GLTF - Shadows
 // from https://threejsfundamentals.org/threejs/threejs-load-gltf-shadows.html
-
+//263_https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene
 
 import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/build/three.module.js';
 import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/examples/jsm/controls/OrbitControls.js';
@@ -260,7 +260,7 @@ function main() {
   const cars = [];
   {
     const gltfLoader = new GLTFLoader();
-    gltfLoader.load('https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene.gltf', (gltf) => {
+    gltfLoader.load('../model/test1.gltf', (gltf) => {
       const root = gltf.scene;
       scene.add(root);
 
