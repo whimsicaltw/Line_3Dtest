@@ -53,7 +53,7 @@ function main() {
 
   {
     const color = 0xFFFFFF;
-    const intensity = 8;
+    const intensity = 3;
     const light = new THREE.DirectionalLight(color, intensity);
     light.castShadow = true;
     light.position.set(-250, 800, -850);
