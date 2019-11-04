@@ -204,7 +204,7 @@ function main() {
 
   {
     const gltfLoader = new GLTFLoader();
-    gltfLoader.load('https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene.gltf', (gltf) => {
+    gltfLoader.load('https://raw.githubusercontent.com/whimsicaltw/Line_3Dtest/master/model/test1.gltf', (gltf) => {
       const root = gltf.scene;
       scene.add(root);
 
